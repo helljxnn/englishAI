@@ -59,34 +59,21 @@ def chat_endpoint():
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
-    models_to_try = [
-        "gemini-2.0-flash-exp",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-001",
-        "gemini-1.5-flash-002",
-        "gemini-1.5-pro",
-        "gemini-1.5-pro-001",
-        "gemini-1.5-pro-002"
-    ]
-
-    last_error = None
-    for model_name in models_to_try:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.7,
-                ),
-                contents=user_message
-            )
-            return jsonify({"response": response.text})
-        except Exception as e:
-            print(f"Failed with {model_name}: {e}")
-            last_error = e
-            continue
-    
-    return jsonify({"error": f"All models failed. Last error: {str(last_error)}"}), 500
+    try:
+        # Para modelos Gemma, incluimos las instrucciones del sistema en el mensaje
+        full_message = f"{system_instruction}\n\nUser: {user_message}\n\nAssistant:"
+        
+        response = client.models.generate_content(
+            model="gemma-3-4b-it",
+            config=types.GenerateContentConfig(
+                temperature=0.7,
+            ),
+            contents=full_message
+        )
+        return jsonify({"response": response.text})
+    except Exception as e:
+        print(f"Error with gemma-3-4b-it: {e}")
+        return jsonify({"error": f"Model failed: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
